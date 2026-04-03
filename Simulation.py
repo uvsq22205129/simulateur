@@ -12,19 +12,19 @@ def backoff(i,tau):
     return np.random.exponential(1/(2**i * tau))
     
 
-Tmax = 1000
+Tmax = 70
 
 
 def simulation_csmacd(lamda,N=10):
     """simulateur de CSMA/CD"""
-
-
+    
     t=0
     events = []
     canal_libre = True
     current_sender=-1
     
-    tranmission_canselled = -1
+    fin_bouillage = False #nous sers pour ne pas faire plusique fois fin de brouillage 
+    tranmission_canselled = set()  # Ensemble pour suivre les transmissions annulées
     stations_a_backpff = set()  # Ensemble pour suivre les stations en backoff
     i_par_station = [2] * N  # Initialisation du nombre de points par station à 0
     nb_packets_par_station = [0] * N  # Initialisation du nombre de points par station à 0
@@ -38,30 +38,41 @@ def simulation_csmacd(lamda,N=10):
     while t<Tmax:
 
         t, event,machine = heappop(events)
-        print('temps:',t)
         match event:
 
             case 'sense':
                 if canal_libre:
-                    heappush(events, (t + 0.05, 'debut_transmission', machine)) # si le canal est libre on commance a transmettre le paquet 0.05 est le temps pour commencer a transmettre le paquet 
+                    heappush(events, (t + 0.5, 'debut_transmission', machine)) # si le canal est libre on commance a transmettre le paquet 0.05 est le temps pour commencer a transmettre le paquet 
                 else:
                     stations_en_attente.add(machine)
 
 
 
             case 'debut_transmission':
+
                 if canal_libre:
+                    print('temps de debut de transmission canale libre  :',t,'station :',machine,'current sender :',current_sender)
+
                     canal_libre = False
                     current_sender = machine
-                    heappush(events,(t + 0.8, 'fin_transmission', machine)) # 0.8 est le temps de transmission du paquet
+                    heappush(events,(t + 10, 'fin_transmission', machine)) # 10 est le temps de transmission du paquet
+                    
                 else:
                     # collision 
-                    print('collision')
+
+
                     machine1=current_sender
                     machine2=machine
 
-                    tranmission_canselled = current_sender
+                    tranmission_canselled.add(machine1)  # Ajouter la machine actuelle à l'ensemble des transmissions annulées
 
+
+
+                    print('collision current_sender:',current_sender,'temps :',t)
+                    # print('tranission cansaled:')
+                    # print(tranmission_canselled)
+
+                  
                     if current_sender not in stations_a_backpff:  # Si la machine actuelle n'est pas déjà en backoff
                         i_machine1=i_par_station[machine1] 
                         i_par_station[machine1]=i_machine1 + 1
@@ -81,10 +92,14 @@ def simulation_csmacd(lamda,N=10):
 
                     heappush(events, (t + backoff(i_machine2, 0.1), 'sense', machine2)) 
 
-                    heappush(events, (t + 1, 'fin_bouillage', None)) # brouillage pendant 1 s 
+                    if(not fin_bouillage):
+                        fin_bouillage = True  # Indiquer que le bouillage est en cours
+                        heappush(events, (t + 1, 'fin_bouillage', None)) # brouillage pendant 1 s 
 
 
             case 'fin_bouillage':
+                #print('fin de bouillage :',t)
+                fin_bouillage = False  # Réinitialiser le flag de fin de bouillage
                 canal_libre = True #le canal redevient libre après le bouillage
                 current_sender = -1 #il n y a plus de machine qui transmet
                 for station in stations_en_attente:
@@ -93,7 +108,10 @@ def simulation_csmacd(lamda,N=10):
                 stations_en_attente.clear()  # Vider l'ensemble des stations en attente après le bouillage
 
             case 'fin_transmission':
-                if tranmission_canselled != machine:
+
+                if machine not in tranmission_canselled:  # Vérifier si la machine n'est pas dans l'ensemble des transmissions annulées
+                    #print('*** temps de fin de transmission canale libre  :',t,'station :',machine,'current sender :',current_sender)
+
                     current_sender = -1 #il n y a plus de machine qui transmet
                     canal_libre = True #le canal redevient libre 
 
@@ -114,7 +132,7 @@ def simulation_csmacd(lamda,N=10):
                     
                     i_par_station[machine] = 2  # Réinitialiser le compteur de backoff pour la station qui a réussi à transmettre
                 else:
-                    tranmission_canselled = -1
+                    tranmission_canselled.discard(machine)
 
 
 
