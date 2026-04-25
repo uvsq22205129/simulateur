@@ -186,15 +186,15 @@ if __name__ == "__main__":
     plt.figure()
     plt.title("nombre de paquets emis par rapport au temps")
     sns.lineplot(x=x_values, y=debit)
-    plt.savefig("pertes.pdf")
+    plt.savefig("debits.pdf")
     plt.close()
 
     # affichage du nombre de client
     plt.figure()
-    plt.title("nombre de client en attentre par rapport au temps")
+    plt.title("nombre de paquets en attentre par rapport au temps")
     x_clients, y_clients = zip(*clients_t)
     sns.lineplot(x=x_clients, y=y_clients)
-    plt.savefig("pertes.pdf")
+    plt.savefig("clients.pdf")
     plt.close()
 
     plt.figure()
