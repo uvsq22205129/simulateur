@@ -181,7 +181,7 @@ if __name__ == "__main__":
     N=100
     n_t, clients_t, pertes_t = simulation_csmacd(lamda,N)
     x_values, y_values = zip(*n_t)
-    debit = [a / b if b != 0 else 0 for a, b in zip(x_values, y_values)]
+    debit = [b / a if a != 0 else 0 for a, b in zip(x_values, y_values)]
     #affichage du debit
     plt.figure()
     plt.title("nombre de paquets emis par rapport au temps")
