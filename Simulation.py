@@ -10,7 +10,7 @@ def duree_exp(p):
 
 def backoff(i,tau):
     """fonction de backoff exponentiel binaire"""
-    return np.random.exponential(1/(2**i * tau))
+    return np.random.exponential(2**i * tau)
 
 
 Tmax = 1000
